@@ -201,6 +201,9 @@ class GroupCommands(object):
 
         log.info("[END] removing group {0}".format(self.group['Group']['name']))
 
+    def _default_lambda_runtime(self):
+        return 'python2.7'
+
     def _default_lambda_role_arn(self):
         if 'LambdaRole' not in self.state:
             log.info("Creating default lambda role '{0}'".format(self._LAMBDA_ROLE_NAME))
@@ -287,12 +290,14 @@ class GroupCommands(object):
                 os.path.join(MAGIC_DIR, l['name']), 'zip', l['package'])
             log.debug("Lambda deployment Zipped to '{0}'".format(zf))
 
+            runtime = l['runtime'] if 'runtime' in l else self._default_lambda_runtime()
+
             for retry in range(3):
                 try:
                     with open(zf, 'rb') as f:
                         lr = self._lambda.create_function(
                             FunctionName=l['name'],
-                            Runtime='python2.7',
+                            Runtime=runtime,
                             Role=role_arn,
                             Handler=l['handler'],
                             Code=dict(ZipFile=f.read()),
